@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
 import { auth } from '../firebase';
@@ -11,13 +11,15 @@ import {
   LogOut, 
   Search, 
   Bell, 
-  Mic, 
-  MessageSquare,
   Sparkles,
   Menu,
-  X
+  X,
+  Zap,
+  ZapOff,
+  RefreshCw
 } from 'lucide-react';
 import ChatWidget from './ChatWidget';
+import { checkApiConnection } from '../geminiService';
 
 interface LayoutProps {
   user: User;
@@ -27,6 +29,16 @@ const Layout: React.FC<LayoutProps> = ({ user }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [geminiStatus, setGeminiStatus] = useState<'checking' | 'working' | 'not-working'>('checking');
+
+  useEffect(() => {
+    const verifyStatus = async () => {
+      setGeminiStatus('checking');
+      const isWorking = await checkApiConnection();
+      setGeminiStatus(isWorking ? 'working' : 'not-working');
+    };
+    verifyStatus();
+  }, []);
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -100,13 +112,20 @@ const Layout: React.FC<LayoutProps> = ({ user }) => {
             <Menu size={24} />
           </button>
 
-          <div className="flex-1 max-w-xl mx-4 relative group">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
-            <input 
-              type="text" 
-              placeholder="Search anything..." 
-              className="w-full bg-slate-100 border-transparent focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 rounded-full pl-10 pr-4 py-2 text-sm transition-all"
-            />
+          <div className="flex items-center gap-4">
+            {/* Gemini Status Badge */}
+            <div className={`hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-bold transition-all ${
+              geminiStatus === 'working' ? 'bg-emerald-50 border-emerald-100 text-emerald-700' :
+              geminiStatus === 'not-working' ? 'bg-red-50 border-red-100 text-red-700' :
+              'bg-slate-50 border-slate-100 text-slate-500'
+            }`}>
+              {geminiStatus === 'checking' && <RefreshCw size={14} className="animate-spin" />}
+              {geminiStatus === 'working' && <Zap size={14} className="fill-emerald-500 text-emerald-500" />}
+              {geminiStatus === 'not-working' && <ZapOff size={14} />}
+              <span className="uppercase tracking-wider">
+                Gemini AI: {geminiStatus === 'working' ? 'Online' : geminiStatus === 'not-working' ? 'Offline' : 'Syncing'}
+              </span>
+            </div>
           </div>
 
           <div className="flex items-center gap-2 md:gap-4">
@@ -160,6 +179,18 @@ const Layout: React.FC<LayoutProps> = ({ user }) => {
                   <span>{item.name}</span>
                 </Link>
               ))}
+              
+              <div className="pt-4 mt-4 border-t border-slate-800">
+                 <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-[10px] font-bold ${
+                    geminiStatus === 'working' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
+                    geminiStatus === 'not-working' ? 'bg-red-500/10 border-red-500/20 text-red-400' :
+                    'text-slate-500'
+                  }`}>
+                    {geminiStatus === 'working' ? <Zap size={12} /> : <ZapOff size={12} />}
+                    Gemini: {geminiStatus.toUpperCase()}
+                  </div>
+              </div>
+
               <button onClick={handleLogout} className="flex items-center gap-3 text-red-400 mt-8 pt-8 border-t border-slate-800 w-full">
                 <LogOut size={20} />
                 <span>Logout</span>

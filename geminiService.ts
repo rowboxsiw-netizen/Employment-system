@@ -3,19 +3,35 @@ import { GoogleGenAI, Type, Modality } from "@google/genai";
 
 /**
  * Initialize the AI client using the mandatory environment variable.
- * Must use process.env.API_KEY directly as per senior engineering guidelines.
  */
 const getAI = () => {
   const apiKey = process.env.API_KEY;
   if (!apiKey) {
-    throw new Error("Gemini API_KEY is not defined in the environment. Please add it to your environment variables.");
+    throw new Error("Gemini API_KEY is not defined.");
   }
   return new GoogleGenAI({ apiKey });
 };
 
+/**
+ * Checks if the API connection is active and valid.
+ */
+export const checkApiConnection = async (): Promise<boolean> => {
+  try {
+    const ai = getAI();
+    // A simple, cheap prompt to verify the key and connection
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: 'ping',
+    });
+    return !!response.text;
+  } catch (error) {
+    console.error("Gemini API Connection Check Failed:", error);
+    return false;
+  }
+};
+
 export const analyzeEnrollmentForm = async (base64Image: string): Promise<any> => {
   const ai = getAI();
-  // Using gemini-3-flash-preview for high-speed OCR and reliable data extraction
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
     contents: {
@@ -54,7 +70,7 @@ export const analyzeEnrollmentForm = async (base64Image: string): Promise<any> =
     return JSON.parse(text);
   } catch (e) {
     console.error("Failed to parse AI response as JSON:", response.text);
-    throw new Error("The AI could not extract clear information from this document. Please try a higher quality scan.");
+    throw new Error("The AI could not extract clear information from this document.");
   }
 };
 
@@ -64,7 +80,7 @@ export const chatWithNexus = async (query: string) => {
     model: "gemini-3-flash-preview", 
     contents: [{ role: 'user', parts: [{ text: query }] }],
     config: {
-      systemInstruction: "You are the Nexus EMS Intelligence Engine. You help HR professionals with workforce analytics, policy explanation, and general management tasks. Be professional, concise, and accurate. Use Google Search grounding for real-time information regarding labor laws or workforce trends.",
+      systemInstruction: "You are the Nexus EMS Intelligence Engine. You help HR professionals with workforce analytics, policy explanation, and general management tasks. Be professional, concise, and accurate.",
       tools: [{ googleSearch: {} }],
     }
   });
