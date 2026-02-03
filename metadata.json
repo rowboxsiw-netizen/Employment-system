@@ -1,0 +1,8 @@
+{
+  "name": "Nexus EMS - Advanced AI Employee Management",
+  "description": "A professional Employee Management System featuring AI-powered OCR for form processing, advanced PDF reporting, and integrated Gemini AI assistants for workforce management.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
