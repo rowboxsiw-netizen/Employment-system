@@ -3,19 +3,19 @@ import { GoogleGenAI, Type, Modality } from "@google/genai";
 
 /**
  * Initialize the AI client using the mandatory environment variable.
- * As per guidelines, this must come from process.env.API_KEY.
+ * Must use process.env.API_KEY directly as per senior engineering guidelines.
  */
 const getAI = () => {
   const apiKey = process.env.API_KEY;
   if (!apiKey) {
-    throw new Error("Gemini API Key is missing. Ensure process.env.API_KEY is set in your environment.");
+    throw new Error("Gemini API_KEY is not defined in the environment. Please add it to your environment variables.");
   }
   return new GoogleGenAI({ apiKey });
 };
 
 export const analyzeEnrollmentForm = async (base64Image: string): Promise<any> => {
   const ai = getAI();
-  // Using gemini-3-flash-preview for high speed and excellent OCR capabilities
+  // Using gemini-3-flash-preview for high-speed OCR and reliable data extraction
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
     contents: {
@@ -49,10 +49,12 @@ export const analyzeEnrollmentForm = async (base64Image: string): Promise<any> =
   });
 
   try {
-    return JSON.parse(response.text || '{}');
+    const text = response.text;
+    if (!text) throw new Error("Received empty response from the AI model.");
+    return JSON.parse(text);
   } catch (e) {
-    console.error("Failed to parse AI response as JSON", response.text);
-    throw new Error("Could not parse employee data from form. Please ensure the image is clear and contains employee information.");
+    console.error("Failed to parse AI response as JSON:", response.text);
+    throw new Error("The AI could not extract clear information from this document. Please try a higher quality scan.");
   }
 };
 
@@ -68,7 +70,7 @@ export const chatWithNexus = async (query: string) => {
   });
 
   return {
-    text: response.text || "I'm sorry, I couldn't generate a response.",
+    text: response.text || "I'm sorry, I encountered an issue generating a response.",
     groundingChunks: response.candidates?.[0]?.groundingMetadata?.groundingChunks || []
   };
 };
