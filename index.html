@@ -26,6 +26,25 @@
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
           background: #cbd5e1;
         }
+        @keyframes pulse-ring {
+          0% { transform: scale(.33); }
+          80%, 100% { opacity: 0; }
+        }
+        .status-pulse {
+          position: relative;
+        }
+        .status-pulse::before {
+          content: '';
+          position: absolute;
+          left: -4px;
+          top: -4px;
+          width: calc(100% + 8px);
+          height: calc(100% + 8px);
+          border-radius: 9999px;
+          animation: pulse-ring 1.25s cubic-bezier(0.455, 0.03, 0.515, 0.955) infinite;
+        }
+        .status-pulse-working::before { border: 2px solid #10b981; }
+        .status-pulse-not-working::before { border: 2px solid #ef4444; }
     </style>
     <script type="importmap">
 {
@@ -37,7 +56,7 @@
     "lucide-react": "https://esm.sh/lucide-react@0.475.0",
     "jspdf": "https://esm.sh/jspdf@2.5.1",
     "jspdf-autotable": "https://esm.sh/jspdf-autotable@3.8.2",
-    "@google/genai": "https://esm.sh/@google/genai@0.2.1",
+    "@google/genai": "https://esm.sh/@google/genai@1.39.0",
     "react-router-dom": "https://esm.sh/react-router-dom@7.1.0",
     "react-hot-toast": "https://esm.sh/react-hot-toast@2.6.0",
     "firebase/app": "https://esm.sh/firebase@11.1.0/app",

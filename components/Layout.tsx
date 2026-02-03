@@ -9,14 +9,13 @@ import {
   LayoutDashboard, 
   FileText, 
   LogOut, 
-  Search, 
-  Bell, 
   Sparkles,
   Menu,
   X,
   Zap,
   ZapOff,
-  RefreshCw
+  RefreshCw,
+  Cpu
 } from 'lucide-react';
 import ChatWidget from './ChatWidget';
 import { checkApiConnection } from '../geminiService';
@@ -38,6 +37,9 @@ const Layout: React.FC<LayoutProps> = ({ user }) => {
       setGeminiStatus(isWorking ? 'working' : 'not-working');
     };
     verifyStatus();
+    // Refresh status every 5 minutes
+    const interval = setInterval(verifyStatus, 300000);
+    return () => clearInterval(interval);
   }, []);
 
   const handleLogout = async () => {
@@ -48,7 +50,7 @@ const Layout: React.FC<LayoutProps> = ({ user }) => {
   const navItems = [
     { name: 'Dashboard', icon: LayoutDashboard, path: '/' },
     { name: 'Employees', icon: Users, path: '/employees' },
-    { name: 'Forms & Documents', icon: FileText, path: '/documents' },
+    { name: 'Documents', icon: FileText, path: '/documents' },
   ];
 
   return (
@@ -71,7 +73,7 @@ const Layout: React.FC<LayoutProps> = ({ user }) => {
               to={item.path}
               className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                 location.pathname === item.path
-                  ? 'bg-indigo-600 text-white'
+                  ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20'
                   : 'text-slate-400 hover:bg-slate-800 hover:text-white'
               }`}
             >
@@ -81,13 +83,44 @@ const Layout: React.FC<LayoutProps> = ({ user }) => {
           ))}
         </nav>
 
+        {/* Sidebar Status Panel */}
+        <div className="p-4 mx-4 mb-4 bg-slate-800/50 rounded-2xl border border-slate-700/50">
+          <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3 px-1">System Health</p>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between px-1">
+              <div className="flex items-center gap-2">
+                <Cpu size={14} className="text-slate-400" />
+                <span className="text-xs font-bold text-slate-300">Gemini Core</span>
+              </div>
+              <div className={`status-pulse ${geminiStatus === 'working' ? 'status-pulse-working' : geminiStatus === 'not-working' ? 'status-pulse-not-working' : ''}`}>
+                <div className={`w-2 h-2 rounded-full ${
+                  geminiStatus === 'working' ? 'bg-emerald-500' :
+                  geminiStatus === 'not-working' ? 'bg-red-500' :
+                  'bg-slate-500 animate-pulse'
+                }`} />
+              </div>
+            </div>
+            <p className={`text-[9px] font-bold px-1 ${
+              geminiStatus === 'working' ? 'text-emerald-400' :
+              geminiStatus === 'not-working' ? 'text-red-400' :
+              'text-slate-500'
+            }`}>
+              {geminiStatus === 'working' ? 'SERVICE IS WORKING' : 
+               geminiStatus === 'not-working' ? 'SERVICE DISCONNECTED' : 
+               'CHECKING CONNECTION...'}
+            </p>
+          </div>
+        </div>
+
         <div className="p-4 border-t border-slate-800">
           <div className="flex items-center gap-3 mb-4 px-2">
-            <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold uppercase">
-              {user.email?.charAt(0)}
-            </div>
+            <img 
+              src={`https://api.dicebear.com/7.x/initials/svg?seed=${user.email}`} 
+              className="w-8 h-8 rounded-lg bg-slate-700"
+              alt="User"
+            />
             <div className="overflow-hidden">
-              <p className="text-sm font-medium truncate">{user.email}</p>
+              <p className="text-sm font-medium truncate">{user.email?.split('@')[0]}</p>
               <p className="text-xs text-slate-500">Administrator</p>
             </div>
           </div>
@@ -112,44 +145,34 @@ const Layout: React.FC<LayoutProps> = ({ user }) => {
             <Menu size={24} />
           </button>
 
-          <div className="flex items-center gap-4">
-            {/* Gemini Status Badge */}
-            <div className={`hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-bold transition-all ${
+          <div className="hidden sm:flex items-center gap-4">
+            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-[10px] font-black tracking-widest transition-all ${
               geminiStatus === 'working' ? 'bg-emerald-50 border-emerald-100 text-emerald-700' :
               geminiStatus === 'not-working' ? 'bg-red-50 border-red-100 text-red-700' :
               'bg-slate-50 border-slate-100 text-slate-500'
             }`}>
-              {geminiStatus === 'checking' && <RefreshCw size={14} className="animate-spin" />}
-              {geminiStatus === 'working' && <Zap size={14} className="fill-emerald-500 text-emerald-500" />}
-              {geminiStatus === 'not-working' && <ZapOff size={14} />}
-              <span className="uppercase tracking-wider">
-                Gemini AI: {geminiStatus === 'working' ? 'Online' : geminiStatus === 'not-working' ? 'Offline' : 'Syncing'}
-              </span>
+              {geminiStatus === 'checking' ? <RefreshCw size={12} className="animate-spin" /> : 
+               geminiStatus === 'working' ? <Zap size={12} className="fill-emerald-500 text-emerald-500" /> : 
+               <ZapOff size={12} />}
+              GEMINI API: {geminiStatus === 'working' ? 'WORKING' : geminiStatus === 'not-working' ? 'DO NOT WORKING' : 'SYNCING'}
             </div>
           </div>
 
-          <div className="flex items-center gap-2 md:gap-4">
-            <button className="p-2 text-slate-400 hover:text-indigo-600 transition-colors relative">
-              <Bell size={20} />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
-            </button>
-            <div className="h-8 w-px bg-slate-200 mx-2"></div>
-            <div className="flex items-center gap-2">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               <div className="text-right hidden sm:block">
-                <p className="text-sm font-semibold text-slate-900 leading-none">{user.displayName || 'Admin'}</p>
-                <p className="text-xs text-slate-500 mt-0.5">Global Admin</p>
+                <p className="text-sm font-bold text-slate-900 leading-none">{user.displayName || 'Admin'}</p>
+                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-1">System Global</p>
               </div>
-              <img 
-                src={`https://api.dicebear.com/7.x/initials/svg?seed=${user.email}`} 
-                alt="Avatar" 
-                className="w-10 h-10 rounded-xl bg-slate-100"
-              />
+              <div className="w-10 h-10 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-slate-600">
+                {user.email?.[0].toUpperCase()}
+              </div>
             </div>
           </div>
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-8">
+        <main className="flex-1 overflow-y-auto p-4 md:p-8 bg-slate-50/50">
           <Outlet />
         </main>
       </div>
@@ -160,40 +183,52 @@ const Layout: React.FC<LayoutProps> = ({ user }) => {
       {/* Mobile Menu Overlay */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-50 bg-slate-900/80 md:hidden animate-in fade-in duration-200">
-          <aside className="w-64 h-full bg-slate-900 text-white p-6 slide-in-from-left duration-300 animate-in">
-            <div className="flex justify-between items-center mb-8">
-              <span className="text-xl font-bold">Nexus EMS</span>
-              <button onClick={() => setMobileMenuOpen(false)}>
+          <aside className="w-72 h-full bg-slate-900 text-white p-6 slide-in-from-left duration-300 animate-in">
+            <div className="flex justify-between items-center mb-10">
+              <div className="flex items-center gap-3">
+                <Sparkles className="text-indigo-400 w-6 h-6" />
+                <span className="text-xl font-black">Nexus</span>
+              </div>
+              <button onClick={() => setMobileMenuOpen(false)} className="p-2 text-slate-400">
                 <X size={24} />
               </button>
             </div>
-            <nav className="space-y-4">
-              {navItems.map((item) => (
-                <Link
-                  key={item.name}
-                  to={item.path}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-3 text-slate-300 hover:text-white"
-                >
-                  <item.icon size={20} />
-                  <span>{item.name}</span>
-                </Link>
-              ))}
-              
-              <div className="pt-4 mt-4 border-t border-slate-800">
-                 <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-[10px] font-bold ${
-                    geminiStatus === 'working' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
-                    geminiStatus === 'not-working' ? 'bg-red-500/10 border-red-500/20 text-red-400' :
-                    'text-slate-500'
-                  }`}>
-                    {geminiStatus === 'working' ? <Zap size={12} /> : <ZapOff size={12} />}
-                    Gemini: {geminiStatus.toUpperCase()}
-                  </div>
+            
+            <nav className="space-y-6">
+              <div className="space-y-2">
+                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-3 mb-2">Main Navigation</p>
+                {navItems.map((item) => (
+                  <Link
+                    key={item.name}
+                    to={item.path}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+                      location.pathname === item.path ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <item.icon size={20} />
+                    <span className="font-bold">{item.name}</span>
+                  </Link>
+                ))}
               </div>
 
-              <button onClick={handleLogout} className="flex items-center gap-3 text-red-400 mt-8 pt-8 border-t border-slate-800 w-full">
+              <div className="pt-6 border-t border-slate-800">
+                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-3 mb-4">API STATUS</p>
+                <div className={`mx-3 p-4 rounded-xl border flex flex-col gap-3 ${
+                  geminiStatus === 'working' ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-red-500/10 border-red-500/20'
+                }`}>
+                  <div className="flex items-center gap-2">
+                    {geminiStatus === 'working' ? <Zap size={16} className="text-emerald-400" /> : <ZapOff size={16} className="text-red-400" />}
+                    <span className={`text-xs font-black uppercase ${geminiStatus === 'working' ? 'text-emerald-400' : 'text-red-400'}`}>
+                      Gemini API {geminiStatus === 'working' ? 'Working' : 'Do Not Working'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <button onClick={handleLogout} className="flex items-center gap-3 text-red-400 mt-10 px-4 py-3 w-full">
                 <LogOut size={20} />
-                <span>Logout</span>
+                <span className="font-bold">Logout</span>
               </button>
             </nav>
           </aside>

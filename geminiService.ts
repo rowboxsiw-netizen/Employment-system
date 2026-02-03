@@ -18,10 +18,11 @@ const getAI = () => {
 export const checkApiConnection = async (): Promise<boolean> => {
   try {
     const ai = getAI();
-    // A simple, cheap prompt to verify the key and connection
+    // Use a very small request to verify the key and network status
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: 'ping',
+      contents: 'ok',
+      config: { maxOutputTokens: 1 }
     });
     return !!response.text;
   } catch (error) {
